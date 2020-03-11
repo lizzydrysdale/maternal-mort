@@ -1,0 +1,137 @@
+---
+title: "Stat 251 Project"
+author: "Elizabeth Mitchell"
+date: "12/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(invgamma)
+x <- seq(0, 1000, length = 1000)
+
+#prior values for PRMR of Black Mothers
+# mu ~ N(lambda, tau2)
+lambda.b <- 25
+tau2.b <- 100
+
+# sigma2 ~ IG(gamma, phi)
+gamma.b <- 2
+phi.b <- 7
+
+plot(dnorm(x, lambda.b, sqrt(tau2.b)), xlim = c(0, 100), main = "Figure 1", ylab = "Density", xlab=expression(mu), type = "l")
+  
+plot(dinvgamma(x, gamma.b, phi.b), xlim = c(0, 10),main = "Figure 3", ylab = "Density", xlab=expression(sigma^2), type = "l")
+
+#prior values for PRMR of White Mothers
+# mu ~ N(lambda, tau2)
+lambda.w <- 18
+tau2.w <- 100
+
+# sigma2 ~ IG(gamma, phi)
+gamma.w <- 2
+phi.w <- 7
+
+plot(dnorm(x, lambda.w, sqrt(tau2.w)), xlim = c(0, 100), main = "Figure 2", ylab = "Density", xlab=expression(mu), type = "l")
+  
+plot(dinvgamma(x, gamma.w, phi.w), xlim = c(0, 10), main = "Figure 4", ylab = "Density", xlab = expression(sigma^2), type = "l")
+
+```
+
+
+```{r}
+PRMR.b <- c(35.6, 41.6, 44.3, 42.1, 40.8)
+PRMR.w <- c(11.5, 12.8, 12.4, 13.5, 13.2)
+
+#initial values for mu and sigma2
+mu.b <- 25
+sigma2.b <- 100
+
+#initial values for mu and sigma2
+mu.w <- 18
+sigma2.w <- 100
+
+#create vectors to save the drawn values
+n.ITERS <- 1000 
+mu.save.b <- rep(0, n.ITERS)
+sigma2.save.b <- rep(0, n.ITERS)
+mu.save.b[1] <- mu.b
+sigma2.save.b[1] <- sigma2.b
+
+
+for(i in 2:n.ITERS){
+
+  #Sample mu
+  mu.post.mean.b <- (tau2.b*sum(PRMR.b) + sigma2.b*lambda.b)/(length(PRMR.b)*tau2.b + sigma2.b)
+  mu.post.sd.b <- sqrt((tau2.b*sigma2.b)/(length(PRMR.b)*tau2.b + sigma2.b))
+  mu.b <- rnorm(1, mu.post.mean.b, mu.post.sd.b)
+  mu.save.b[i] <- mu.b
+  
+  #Sample sigma2
+  sigma2.post.gamma.b <- length(PRMR.b)/2 + gamma.b
+  sigma2.post.phi.b <- phi.b + .5*sum((PRMR.b - mu.b)^2) 
+  sigma2.b <- 1/rgamma(1, sigma2.post.gamma.b, sigma2.post.phi.b)
+  sigma2.save.b[i] <- sigma2.b
+
+}
+
+
+plot(density(sigma2.save.b), main = "Figure 5", xlab = expression(sigma^2))
+plot(density(mu.save.b), main = "Figure 4", xlab = expression(mu))
+```
+
+```{r}
+#initial values for mu and sigma2
+mu.w <- 25
+sigma2.w <- 100
+
+#initial values for mu and sigma2
+mu.w <- 18
+sigma2.w <- 100
+
+#create vectors to save the drawn values
+n.ITERS <- 1000 
+mu.save.w <- rep(0, n.ITERS)
+sigma2.save.w <- rep(0, n.ITERS)
+mu.save.w[1] <- mu.w
+sigma2.save.w[1] <- sigma2.w
+
+par(ask=T, mfrow=c(1,2))
+
+for(i in 2:n.ITERS){
+
+  #Sample mu
+  mu.post.mean.w <- (tau2.w*sum(PRMR.w) + sigma2.w*lambda.w)/(length(PRMR.w)*tau2.w + sigma2.w)
+  mu.post.sd.w <- sqrt((tau2.w*sigma2.w)/(length(PRMR.w)*tau2.w + sigma2.w))
+  mu.w <- rnorm(1, mu.post.mean.w, mu.post.sd.w)
+  mu.save.w[i] <- mu.w
+  
+  #Sample sigma2
+  sigma2.post.gamma.w <- length(PRMR.w)/2 + gamma.w
+  sigma2.post.phi.w <- phi.w + .5*sum((PRMR.w - mu.w)^2) 
+  sigma2.w <- 1/rgamma(1, sigma2.post.gamma.w, sigma2.post.phi.w)
+  sigma2.save.w[i] <- sigma2.w
+
+}
+
+
+plot(density(sigma2.save.w), main = "Figure 7", xlab = expression(sigma^2))
+plot(density(mu.save.w), main = "Figure 6", xlab = expression(mu))
+```
+```{r}
+difference <- mu.save.b - mu.save.w
+
+plot(density(difference), xlab=expression(mu[B] - mu[W]), ylab="Density", main="Figure 4")
+```
+```{r}
+mean(difference > 0)
+
+quantile(difference, c(.025, .975))
+
+mean(difference)
+var(difference)
+```
+
